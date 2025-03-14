@@ -63,8 +63,7 @@ khres = {   # useful regular sub expressions used later
     "NSTRONG": """(?:{S2}\u17CC?(?:\u17D2{S2}(?:\u17D2{S2})?)? # Series 2 + series 2 coengs
                      |\u1794\u17CC?(?:{COENG}(?:{COENG})?)?    # or ba with any coeng
                      |{B}\u17CC?(?:\u17D2{NonRo}\u17D2\u1794   # or ba coeng
-                                  |\u17D2\u1794(?:\u17D2{B}))
-                  )""",
+                                  |\u17D2\u1794(?:\u17D2{B})))""",
     "COENG":   "(?:(?:\u17D2{NonRo})?\u17D2{B})",
     # final coeng
     "FCOENG":  "(?:\u200D(?:\u17D2{NonRo})+)",
@@ -77,7 +76,7 @@ khres = {   # useful regular sub expressions used later
     "SHIFTX":  """(?:(?<={STRONG}) \u17CA\u200C (?={VAX})      # strong + triisap held up
                     | (?<={NSTRONG})\u17C9\u200C (?={VASX})    # weak + muusikatoan held up
                     | [\u17C9\u17CA]                           # any shifter
-                   )""",
+                  )""",
     # Modern Khmer vowel
     "V":       "[\u17B6-\u17C5]?",
     # Middle Khmer vowel sequences (not worth trying to unpack this)
@@ -89,13 +88,13 @@ khres = {   # useful regular sub expressions used later
     # Modern Khmer Modifiers
     "MS":      """(?:(?:  [\u17C6\u17CB\u17CD-\u17CF\u17D1\u17D3]   # follows anything
                        | (?<!\u17BB) [\u17D0\u17DD])                # not after -u
-                     [\u17C6\u17CB\u17CD-\u17D1\u17D3\u17DD]?   # And an optional second
+                     [\u17C6\u17CB\u17CD-\u17D1\u17D3\u17DD]?  # And an optional second
                   )""",
     # Middle Khmer Modifiers
     "MSX":     """(?:(?:  [\u17C6\u17CB\u17CD-\u17CF\u17D1\u17D3]   # follows anything
-                        | (?<!\u17BB [\u17B6\u17C4\u17C5]?)    # blocking -u sequence
-                     [\u17D0\u17DD])                           # for these modifiers
-                  [\u17C6\u17CB\u17CD-\u17D1\u17D3\u17DD]?     # And an optional second
+                        | (?<!\u17BB [\u17B6\u17C4\u17C5]?)       # blocking -u sequence
+                        [\u17D0\u17DD])                           # for these modifiers
+                     [\u17C6\u17CB\u17CD-\u17D1\u17D3\u17DD]? # And an optional second
                   )"""
 }
 
@@ -160,10 +159,12 @@ def khnormal(txt, lang="km"):
         replaces = re.sub("\u17C1([\u17BB-\u17BD]?)\u17B6", "\u17C4\\1", replaces)
         replaces = re.sub("(\u17BE)(\u17BB)", r"\2\1", replaces)
         # Replace -u + upper vowel with consonant shifter
-        replaces = re.sub("({STRONG}[\u17C1-\u17C5]?)\u17BB"
-                          "(?={VA}|\u17D0)".format(**khres), "\\1\u17CA", replaces, re.X)
-        replaces = re.sub("({NSTRONG}[\u17C1-\u17C5]?)\u17BB"
-                          "(?={VA}|\u17D0)".format(**khres), "\\1\u17C9", replaces, re.X)
+        replaces = re.sub(("((?:{STRONG})[\u17C1-\u17C5]?)\u17BB" + \
+                          "(?={VA}|\u17D0)").format(**khres), "\\1\u17CA",
+                          replaces, flags=re.X)
+        replaces = re.sub(("((?:{NSTRONG})[\u17C1-\u17C5]?)\u17BB" + \
+                          "(?={VA}|\u17D0)").format(**khres), "\\1\u17C9",
+                          replaces, flags=re.X)
         replaces = re.sub("(\u17D2\u179A)(\u17D2[\u1780-\u17B3])",
                           r"\2\1", replaces)    # coeng ro second
         replaces = re.sub("(\u17D2)\u178A", "\\1\u178F", replaces)  # coeng da->ta
@@ -177,13 +178,13 @@ def khnormal(txt, lang="km"):
         i = j
     return "".join(res)
 
-testsyl = regex.compile("({B}\u17CC?{COENG}?{SHIFT}?{V}{MS}?[\u17C7\u17C8]?|"
-       "[\u17A3\u17A4\u17B4\u17B5]|[^\u1780-\u17D2])".format(**khres), regex.X)
-testsylx = regex.compile("({B}\u17CC?{COENG}?{SHIFTX}?{VX}{MSX}?[\u17C7\u17C8]?{FCOENG}?|"
-       "[\u17A3\u17A4\u17B4\u17B5]|[^\u1780-\u17D2])".format(**khres), regex.X)
+testsyl = regex.compile(("({B}\u17CC?{COENG}?{SHIFT}?{V}{MS}?[\u17C7\u17C8]?|" +
+       "[\u17A3\u17A4\u17B4\u17B5]|[^\u1780-\u17D2])").format(**khres), regex.X)
+testsylx = regex.compile(("({B}\u17CC?{COENG}?{SHIFTX}?{VX}{MSX}?[\u17C7\u17C8]?{FCOENG}?|" +
+       "[\u17A3\u17A4\u17B4\u17B5]|[^\u1780-\u17D2])").format(**khres), regex.X)
 def khtest(txt, lang="km"):
-    ''' Tests normalized text for conformance to Khmer encoding structure.
-        MIddle Khmer support is not strict. '''
+    ''' Only tests text for conformance to Khmer encoding structure, reporting where
+        errors are found. Middle Khmer supported (lang="xhm") but not very strictly. '''
     res = []
     passed = True
     syl = testsylx if lang == "xhm" else testsyl
@@ -234,8 +235,7 @@ if __name__ == "__main__":
                                         if args.outfile else sys.stdout
         for i, l in enumerate(infile.readlines()):
             l = re.sub(r"(.*?)#.*$", r"\1", l.strip())
-            if not len(l):
-                continue
+            if not len(l): continue
             res = khnormal(l, lang=args.lang) if not args.notnormal else l
             if args.fail:
                 tested = khtest(res)
